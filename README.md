@@ -75,9 +75,9 @@ Energy consumption is evaluated using real-world measurements with an INA219 cur
   - The INA219 sensor data validates that the adaptive sampling strategy is highly effective at reducing overall energy usage.
 
 *Visual Evidence:*  
-- [Energy Savings](./images/energy_savings.png)  
-- [Power Consumption Comparison](./images/power_comparison.png)  
-- [Power Consumption after FFT](./images/power_consumption.png)
+- ![Energy Savings](./images/energy_savings.png)  
+- ![Power Consumption Comparison](./images/power_comparison.png)  
+- ![Power Consumption after FFT](./images/power_consumption.png)
 
 ### Data Transmission Volume
 
@@ -96,7 +96,7 @@ Total volume per minute = 6 messages × 6 bytes = 36 bytes
 The data transmission volume is identical for both sampling methods—36 bytes per minute—since only the aggregated value is transmitted.
 
 *Visual Evidence:*  
-- [Payload Size Screenshot](./images/payload_size.png)
+- ![Payload Size Screenshot](./images/payload_size.png)
 
 ### End-to-End Latency
 
@@ -111,18 +111,18 @@ End-to-end latency is measured as the time delay from data generation on the ESP
   The average latency is approximately 215 milliseconds, which is acceptable for most real-time IoT applications.
 
 *Visual Evidence:*  
-- [Latency Measurements](./images/latency.png)
-- [MQTT Packets sent by ESP32](./images/latency.png)
-- [MQTT Packets receieved by Mosquitto Broker](./images/latency.png)
+- ![Latency Measurements](./images/latency.png)
+- ![MQTT Packets sent by ESP32](./images/latency.png)
+- ![MQTT Packets receieved by Mosquitto Broker](./images/latency.png)
 
 ### Real-World Power Measurements
 
 The INA219 sensor provided actual power usage readings during various operational states, confirming that the adaptive sampling approach yields substantial energy savings compared to continuous high-rate sampling.
 
 *Visual Evidence:*  
-- [INA219 Reading 1](./images/ina219_1.png)  
-- [INA219 Reading 2](./images/ina219_2.png)  
-- [INA219 Reading 3](./images/ina219_3.png)
+- ![INA219 Reading 1](./images/ina219_1.png)  
+- ![INA219 Reading 2](./images/ina219_2.png)  
+- ![INA219 Reading 3](./images/ina219_3.png)
 
 ---
 
@@ -130,7 +130,7 @@ The INA219 sensor provided actual power usage readings during various operationa
 
 The following circuit diagram shows the system setup, including the ESP32 board, INA219 current sensor, and other essential components.
 
-- [Circuit Diagram](./images/circuit_diagram.png)
+- ![Circuit Diagram](./images/circuit_diagram.png)
 
 ---
 
