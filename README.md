@@ -51,6 +51,17 @@ The primary goal is to conserve energy by reducing unnecessary high-frequency sa
 - **FFT Computation:**  
   The `arduinoFFT` library is used to process sensor data stored in arrays `vReal` and `vImag`. The computation identifies the dominant frequency, and the optimal sampling frequency is set accordingly (optimal = 2 × dominant frequency).
 
+- **Input Signal Selection:**  
+  The code defines an enumeration of possible test signals:
+  - `SIGNAL_LOW_FREQ`
+  - `SIGNAL_MIXED`
+  - `SIGNAL_HIGH_FREQ`
+
+  The current signal is set to `SIGNAL_MIXED` by default, which simulates a signal defined as:  
+  `1.0 + 2*sin(2*PI*3*t) + 4*sin(2*PI*30*t)`
+
+  This allows evaluation under different signal conditions.
+
 ### Data Aggregation and Transmission
 - **Aggregation Window:**  
   Sensor data is aggregated over a 10-second interval defined by `AGGREGATE_WINDOW_MS`.
