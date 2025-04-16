@@ -6,6 +6,29 @@ The primary goal is to conserve energy by reducing unnecessary high-frequency sa
 
 ---
 
+## 📑 Table of Contents
+
+- [Project Overview](#project-overview)
+  - [Objectives](#objectives)
+- [Key System Components and Important Variables](#key-system-components-and-important-variables)
+  - [Network and Time Synchronization](#network-and-time-synchronization)
+  - [LoRaWAN and MQTT Configurations](#lorawan-and-mqtt-configurations)
+  - [Sampling and FFT Analysis](#sampling-and-fft-analysis)
+  - [Data Aggregation and Transmission](#data-aggregation-and-transmission)
+  - [Power Management](#power-management)
+- [Performance Evaluation](#performance-evaluation)
+  - [Energy Consumption](#energy-consumption)
+  - [Data Transmission Volume](#data-transmission-volume)
+  - [End-to-End Latency](#end-to-end-latency)
+  - [Real-World Power Measurements](#real-world-power-measurements)
+- [Circuit Diagram](#circuit-diagram)
+- [Setup and Usage](#setup-and-usage)
+  - [Prerequisites](#prerequisites)
+  - [Installation Steps](#installation-steps)
+- [Conclusion](#conclusion)
+- [Author](#author)
+
+
 ## Project Overview
 
 ### Objectives
