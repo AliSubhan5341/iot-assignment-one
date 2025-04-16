@@ -1,41 +1,61 @@
 # Adaptive IoT Sampling and Aggregation System
 
-This repository contains the implementation of an IoT system based on the ESP32 and FreeRTOS. The system collects sensor data, performs local FFT analysis to determine the optimal sampling frequency, aggregates sensor readings, and transmits the aggregated results to both an edge server (via MQTT over WiFi) and the cloud (via LoRaWAN and TTN). The design also includes energy-saving strategies that reduce the system's power consumption compared to traditional oversampled systems.
+This repository implements an energy-efficient IoT system using an ESP32 board with FreeRTOS. The device collects sensor data, performs local FFT analysis to determine the dominant frequency, and then adapts its sampling frequency accordingly. It computes an average over a 10-second window and transmits this aggregated value via two channels: MQTT over WiFi to an edge server, and LoRaWAN (via TTN) to the cloud.
+
+The primary goal is to conserve energy by reducing unnecessary high-frequency sampling while ensuring a constant and minimal communication load over the network.
 
 ---
 
 ## Project Overview
 
-This project aims to optimize energy usage and reduce communication overhead while preserving data quality. The key aspects include:
+### Objectives
 
-- **Local Signal Analysis (FFT):**  
-  A high-frequency sampling phase is used to perform an FFT on the sensor signal to detect the dominant frequency components. The Nyquist principle is then applied to set an optimal sampling frequency (twice the maximum detected frequency).
+- **Efficient Signal Analysis:**  
+  The system initially samples the sensor signal at a very high rate to perform Fast Fourier Transform (FFT) analysis. This process identifies the dominant frequencies present in the signal. Based on the Nyquist theorem, the device then computes an optimal sampling frequency (set to twice the maximum significant frequency), thereby avoiding oversampling and saving energy.
 
-- **Adaptive Sampling & Deep Sleep:**  
-  After computing the optimal sampling rate, the device switches to this rate and enters a deep sleep mode between sampling intervals. This approach dramatically reduces power consumption compared to continuous oversampling.
+- **Adaptive Sampling & Power Management:**  
+  After the FFT phase, the adaptive sampling frequency is “locked in” and the device switches from the high-frequency sampling mode to a lower, optimal frequency. It enters deep sleep mode between transmission intervals to significantly reduce energy consumption.
 
-- **Data Aggregation & Transmission:**  
-  The system aggregates sensor readings over a fixed 10-second window. The aggregated (averaged) value is then transmitted using:
-  - **MQTT over WiFi:** to a local edge server.
-  - **LoRaWAN:** to a cloud server via TTN.
+- **Data Aggregation and Consistent Payload:**  
+  The system aggregates sensor readings over a fixed 10-second window. Regardless of whether the device is oversampling or using the adaptive sampling strategy, it transmits only one aggregated value. This results in a consistent 6-byte payload transmitted every 10 seconds, ensuring that network load is constant.
 
-*Note:* Regardless of the sampling strategy, both systems transmit only one aggregated value every 10 seconds. Therefore, the payload size remains constant.
+- **Dual Communication Channels:**  
+  The aggregated result is sent over MQTT (using WiFi) to an edge server and via LoRaWAN to the cloud (using OTAA activation on TTN).
 
 ---
 
-## System Operation
+## Key System Components and Important Variables
 
-1. **FFT Phase:**  
-   At start-up, the system samples the signal at maximum frequency for a short duration to run the FFT. The results from the FFT determine the dominant frequency and help set the optimal sampling frequency based on the Nyquist criterion.
+### Network and Time Synchronization
+- **NTP Sync Variables:**  
+  - `g_ntpEpoch`: Epoch time at the last NTP sync.
+  - `g_syncMillis`: The system uptime (millis) at synchronization.
+- **IP Configuration:**  
+  Variables such as `local_IP`, `gateway`, `subnet`, `primaryDNS`, and `secondaryDNS` ensure stable network connections.
+- **NTP Server:**  
+  The system uses `ntpServer` (e.g., "time.google.com") with offsets (`gmtOffset_sec` and `daylightOffset_sec`) for accurate time stamping.
 
-2. **Adaptive Sampling:**  
-   Following the FFT phase, the ESP32 adapts its sampling frequency to a lower rate (optimal frequency), reducing the amount of processing and energy consumption.
+### LoRaWAN and MQTT Configurations
+- **LoRaWAN Settings:**  
+  Parameters like `devEui`, `appEui`, `appKey`, and the channel mask ensure proper cloud communication via the LoRaWAN network.  
+- **WiFi/MQTT Parameters:**  
+  WiFi is set up using credentials (`ssid_wifi` and `password_wifi`), and the MQTT client is configured with `mqtt_server`, `mqtt_port`, `mqtt_topic`, and `client_id`.
 
-3. **Deep Sleep & Wake-Up:**  
-   The device enters deep sleep to conserve energy. It wakes up periodically (every 10 seconds) to sample the signal, compute the average over that interval, and then transmit the aggregated data.
+### Sampling and FFT Analysis
+- **Sampling Constants:**  
+  - `WINDOW_SIZE` defines the number of samples used for the FFT (must be a power of 2).  
+  - `MAX_SAMPLING_FREQ` is the maximum rate at which the device is capable of sampling.
+- **Adaptive Variables:**  
+  - `currentSamplingFreq` holds the active sampling frequency.
+  - `lockedAdaptiveFreq` (saved in RTC memory) preserves the optimal frequency across deep sleep cycles.
+- **FFT Computation:**  
+  The code uses the `arduinoFFT` library to perform FFT on `vReal` and `vImag` arrays, identifying the maximum frequency component and setting the optimal sampling frequency accordingly.
 
-4. **Data Transmission:**  
-   The aggregated value (formatted as a 4-decimal floating point number) is transmitted via MQTT and LoRaWAN. Measurements indicate that the payload size is exactly 6 bytes per message, regardless of whether the system uses oversampling or adaptive sampling.
+### Data Aggregation and Transmission
+- **Aggregation Window:**  
+  Sensor data is aggregated over a 10-second interval (`AGGREGATE_WINDOW_MS`).
+- **Communication Load:**  
+  After aggregation, the sensor’s average reading (formatted to four decimal places) is transmitted. This message is fixed at 6 bytes regardless of the internal sampling strategy.
 
 ---
 
@@ -43,54 +63,67 @@ This project aims to optimize energy usage and reduce communication overhead whi
 
 ### Energy Consumption
 
-The adaptive system dramatically reduces energy consumption. By processing raw data internally and only transmitting the essential aggregated value, the device is able to remain in a low-power sleep mode most of the time. Energy consumption was calculated using trapezoidal integration on the power curves, and our results show significant savings with the adaptive approach compared to continuous high-frequency sampling.
+The adaptive sampling method is designed to significantly reduce energy use compared to continuous high-rate sampling. This is achieved by performing a brief period of high-frequency sampling for FFT analysis, then switching to an optimal, lower sampling rate with deep sleep between transmissions.
 
-*See the energy saving graph and detailed measurements (provided as images in the `images` folder):*
+- **Software-Based Integration:**  
+  Energy savings are computed by integrating power data over time using methods like trapezoidal integration. These calculations reveal that the adaptive system consumes far less energy during its sleep and low-power operation phases compared to an oversampled system.
+  
+- **Real-World Measurements:**  
+  Power consumption was also verified with an INA219 current sensor. The sensor’s readings clearly demonstrate that the adaptive sampling mode produces lower current draw during deep sleep and transmission bursts. This experimental evidence provides additional confidence in the energy savings claims.
 
-![Energy Savings Graph](./images/energy_savings.png)  
-![Power Consumption Comparison](./images/power_comparison.png)
-
----
+*Visuals:*  
+- [Energy Savings Graph](./images/energy_savings.png)  
+- [Power Consumption Comparison](./images/power_comparison.png)
 
 ### Data Transmission Volume
 
-Despite the change in internal sampling frequency, both systems send the same network payload:
-- **Payload Content:** The average reading (e.g., "1.0000")
-- **Payload Size:** 6 bytes per message
-- **Transmission Interval:** Every 10 seconds
+Despite the significant differences in internal sampling strategies, both systems transmit the same volume of data over the network. This is because only one aggregated value is sent every 10 seconds. The payload is always a fixed-size message (6 bytes), regardless of whether the system is using adaptive sampling or oversampling.
 
-This results in a constant transmission load (36 bytes per minute), regardless of whether oversampling or adaptive sampling is used. This metric was verified with a PC-based MQTT monitoring script.
+- **Network Load Consistency:**  
+  The fixed interval and constant payload size mean that the network load is predictable and minimal—approximately 36 bytes per minute. This predictable load is beneficial for network stability and is especially important in bandwidth-constrained environments.
 
-![Payload Size Screenshot](./images/payload_size.png)
-
----
+*Visual:*  
+- [Payload Size Screenshot](./images/payload_size.png)
 
 ### End-to-End Latency
 
-End-to-end latency was measured by capturing timestamps at the point the ESP32 publishes the MQTT message and at the point the message is received by the MQTT broker. The average measured latency is approximately 215 ms, indicating that the communication path is both reliable and timely for practical IoT applications.
+End-to-end latency in the system—measured from the time a sensor reading is generated at the ESP32 until the aggregated message is received at the MQTT broker—has been consistently around 215 milliseconds. 
 
-![Latency Measurements](./images/latency.png)
+- **Latency Measurement Approach:**  
+  The system uses NTP synchronization to accurately timestamp messages at the source and on the receiving edge server. This allows precise computation of the latency.
+  
+- **Reliability:**  
+  A consistent latency of around 215 ms is acceptable for many real-time IoT applications, ensuring that the system is both responsive and reliable.
 
----
+*Visual:*  
+- [Latency Measurements](./images/latency.png)
 
 ### Real-World Power Measurements
 
-Power consumption was additionally validated using an INA219 sensor connected to an Arduino. The INA219 provided real-world current measurements during various operating phases (FFT, deep sleep, transmission). These images confirm that the adaptive sampling strategy leads to significant power savings.
+In addition to software-simulated measurements, actual power usage was recorded using an INA219 sensor. These measurements show the actual current draw during various operating modes, such as during the FFT, the deep sleep periods, and the transmission bursts. The data validates that adaptive sampling yields substantial energy savings.
 
-![INA219 Measurement 1](./images/ina219_1.png)  
-![INA219 Measurement 2](./images/ina219_2.png)  
-![INA219 Measurement 3](./images/ina219_3.png)
+*Visuals:*  
+- [INA219 Reading 1](./images/ina219_1.png)  
+- [INA219 Reading 2](./images/ina219_2.png)  
+- [INA219 Reading 3](./images/ina219_3.png)
 
 ---
 
-## How to Set Up and Run the System
+## Setup and Usage
 
 ### Prerequisites
-- **Hardware:** ESP32 board (e.g., Heltec WiFi LoRa V3), INA219 current sensor (for power measurements)
-- **Network:** Access to a WiFi network, MQTT broker (e.g., Mosquitto), and a LoRaWAN gateway / TTN account.
-- **Software:** Arduino IDE or PlatformIO for firmware development, and Python for edge monitoring.
+- **Hardware:**  
+  - ESP32 board (e.g., Heltec WiFi LoRa V3)  
+  - INA219 current sensor (for power measurement validation)
+- **Network Requirements:**  
+  - A WiFi network with a configured MQTT broker (e.g., Mosquitto)  
+  - A LoRaWAN gateway and a TTN account for cloud transmissions
+- **Software:**  
+  - Arduino IDE or PlatformIO for compiling and flashing the firmware  
+  - Python for running the MQTT monitoring script
 
-### Instructions
+### Installation Steps
+
 1. **Clone the Repository:**
    ```bash
    git clone https://github.com/your-username/adaptive-iot-sampling.git
