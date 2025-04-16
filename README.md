@@ -112,8 +112,8 @@ End-to-end latency is measured as the time delay from data generation on the ESP
 
 *Visual Evidence:*  
 - ![Latency Measurements](./images/latency.png)
-- ![MQTT Packets sent by ESP32](./images/latency 1.png)
-- ![MQTT Packets receieved by Mosquitto Broker](./images/latency 2.png)
+- ![MQTT Packets sent by ESP32](./images/latency_1.png)
+- ![MQTT Packets receieved by Mosquitto Broker](./images/latency_2.png)
 
 ### Real-World Power Measurements
 
